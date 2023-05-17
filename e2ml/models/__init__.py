@@ -1,3 +1,3 @@
-from ._pwc import PWC
+from ._binary_logistic_regression import BinaryLogisticRegression
 
-__all__ = ['PWC']
+__all__ = ['BinaryLogisticRegression']
