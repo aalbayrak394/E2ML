@@ -30,7 +30,40 @@ def confusion_matrix(y_true, y_pred, *, n_classes=None, normalize=None):
         Confusion matrix whose i-th row and j-th column entry indicates the number of amples with true label being
         i-th class and predicted label being j-th class.
     """
-    # TODO 
+    y_true = column_or_1d(y_true).astype(int)
+    y_pred = column_or_1d(y_pred).astype(int)
+
+    check_consistent_length(y_true, y_pred)
+    # TODO
+    # check_scalar(y, target_type=int, name='y')
+    # check_scalar(y, target_type=int, name='y')
+
+    y_min = np.min((y_true.min(), y_pred.min()))
+    y_max = np.max((y_true.max(), y_pred.max()))
+
+    if y_min < 0:
+        raise ValueError('negative value')
+
+    if n_classes is None:
+        n_classes = int(y_max+1)
+
+    C = np.zeros((n_classes, n_classes))
+
+    for i in range(n_classes):
+        for j in range(n_classes):
+            C[i, j] = np.sum((y_true == i) & (y_pred == j))
+
+    with np.errstate(all='ignore'):
+        if normalize == 'true':
+            C = C/C.sum(axis=1, keepdims=True)
+        elif normalize == 'pred':
+            C = C/C.sum(axis=1, keepdims=True)
+        elif normalize == 'all':
+            C = C/C.sum()
+
+        C = np.nan_to_num(C)
+
+    return C
 
 
 def accuracy(y_true, y_pred):
@@ -48,7 +81,16 @@ def accuracy(y_true, y_pred):
     acc : float in [0, 1]
         Accuracy.
     """
-    # TODO 
+    y_true = column_or_1d(y_true).astype(int)
+    y_pred = column_or_1d(y_pred).astype(int)
+    check_consistent_length(y_true, y_pred)
+
+    C = confusion_matrix(y_true, y_pred)
+    TN = C[0,0]
+    TP = C[1,1]
+
+    acc = np.trace(C) / np.sum(C)
+    return acc
 
 
 def cohen_kappa(y_true, y_pred, n_classes=None):
@@ -89,9 +131,9 @@ def cohen_kappa(y_true, y_pred, n_classes=None):
 
 
 def macro_f1_measure(y_true, y_pred, n_classes=None):
-    """Computes the marco F1 measure.
+    """Computes the macro F1 measure.
 
-    The F1 measure is compute for each class individually and then averaged. If there is a class label with no true nor
+    The F1 measure is computed for each class individually and then averaged. If there is a class label with no true nor
     predicted samples, the F1 measure is set to 0.0 for this class label.
 
     Parameters
@@ -101,12 +143,53 @@ def macro_f1_measure(y_true, y_pred, n_classes=None):
     y_pred : array-like of shape (n_samples,)
         Estimated targets as returned by a classifier. Expected to be in the set `{0, ..., n_classes-1}`.
     n_classes : int
-        Number of classes. If `n_classes=None`, the number of classes is assumed to be the maximum value of `y_ture`
+        Number of classes. If `n_classes=None`, the number of classes is assumed to be the maximum value of `y_true`
         and `y_pred`.
 
     Returns
     -------
     macro_f1 : float in [0, 1]
-        The marco f1 measure between 0 and 1.
+        The macro f1 measure between 0 and 1.
     """
-    # TODO 
+    y_true = column_or_1d(y_true).astype(int)
+    y_pred = column_or_1d(y_pred).astype(int)
+    check_consistent_length(y_true, y_pred)
+
+
+    y_min = np.min((y_true.min(), y_pred.min()))
+    y_max = np.max((y_true.max(), y_pred.max()))
+
+    if y_min < 0:
+        raise ValueError('negative value')
+
+    if n_classes is None:
+        n_classes = int(y_max+1)
+
+    # C = confusion_matrix(y_pred=y_pred, y_true=y_true)
+    # f1_scores = np.zeros(n_classes)
+
+    # for c in range(n_classes):
+    #     if not np.any(np.isnan(y_true)) and not np.any(np.isnan(y_pred)):
+    #         f1 = 0.0
+    #     else:
+    #         TP = C[c, c]
+    #         FP = np.sum(C[:, c]) - TP
+    #         FN = np.sum(C[c]) - TP
+
+    #         Prec = TP / (TP + FP)
+    #         Rec = TP / (TP + FN)
+    #         f1 = (2*Prec*Rec) / (Prec + Rec)
+
+    #     f1_scores[c] = f1
+
+    # return np.mean(f1_scores)
+
+    C = confusion_matrix(y_true=y_true, y_pred=y_pred, n_classes=n_classes)
+    n_classes = len(C)
+    f1 = np.zeros(n_classes)
+    for c in range(n_classes):
+        if C[c, :].sum() == 0 and C[:, c].sum() == 0:
+            f1[c] = 0.0
+        else:
+            f1[c] = 2 * C[c, c] / (C[c, :].sum() + C[:, c].sum())
+    return np.mean(f1)
