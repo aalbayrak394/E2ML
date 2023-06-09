@@ -142,6 +142,42 @@ def perform_bayesian_optimization(X_cand, gpr, acquisition_func, obj_func, n_eva
         n_evals, name='n_random_init', target_type=int, min_val=1, max_val=len(X_cand)-1
     )
 
-    # # Perform Bayesian optimization until `n_evals` have been performed.
-    # for i in range(n_evals):
-    #     # gpr.fit()
+    # Perform Bayesian optimization until `n_evals` have been performed.
+    X_cand_is_acquired = np.zeros(len(X_cand), dtype=bool)
+    X_acquired = []
+    y_acquired = []
+
+    # n_random_init
+    random_selected_idx = np.random.RandomState(1).choice(len(X_cand), size=n_random_init)
+    X_cand_is_acquired[random_selected_idx] = True
+    [X_acquired.append(X_cand[idx_]) for idx_ in random_selected_idx]
+    [y_acquired.append(obj_func(X_cand[idx_])) for idx_ in random_selected_idx]
+
+    # n_evals
+    for i in range(n_random_init, n_evals):
+        # fit gpr
+        gpr.fit(X_acquired, y_acquired)
+
+        # predict
+        mu, sigma = gpr.predict(X_cand[~X_cand_is_acquired], return_std=True)
+
+        # compute tau
+        tau = np.max(y_acquired)
+
+        # evaluate acquisition function
+        if acquisition_func == 'pi':
+            scores = acquisition_pi(mu, sigma, tau)
+        elif acquisition_func == 'ei':
+            scores = acquisition_ei(mu, sigma, tau)
+        elif acquisition_func == 'ucb':
+            scores = acquisition_ucb(mu, sigma, kappa=1)
+
+        # find candidates according to acq func score
+        acq_func_selected_idx = np.argmax(scores)
+
+        # selection, append list
+        X_cand_is_acquired[acq_func_selected_idx] = True
+        X_acquired.append(X_cand[acq_func_selected_idx])
+        y_acquired.append(obj_func(X_cand[acq_func_selected_idx]))
+
+    return np.array(X_acquired), np.array(y_acquired)
