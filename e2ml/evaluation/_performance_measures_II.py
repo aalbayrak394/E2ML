@@ -21,42 +21,7 @@ def roc_curve(labels, x, scores):
         at different classification thresholds.
 
     """
-    labels = np.array(labels)
-    scores = np.array(scores)
-
-    zs_idx = np.argsort(scores)
-    zs = scores[zs_idx]
-    ls = labels[zs_idx]
-
-    roc_curve = np.zeros((len(scores)+2, 2))
-
-    for i, t in enumerate(zs):
-        pred = zs >= t
-        tp = (ls==pred) & (ls==x)
-        fp = (ls!=pred) & (ls!=x)
-
-        tpr = sum(tp) / sum(labels==x)
-        fpr = sum(fp) / sum(labels!=x)
-
-        roc_curve[i, :] = [fpr, tpr]
-
-    roc_curve = roc
-    return roc_curve
-
-    # # iterieren über threshold
-
-    # roc_curve = np.zeros((len(scores)+2,2))
-    # for i, t in enumerate(zs):
-    #     pred = zs >= t
-    #     tp = (ls==pred) & (ls==x)
-    #     fp = (ls!=pred) & (ls!=x)
-
-    #     tpr = sum(tp) / sum(labels==x)
-    #     fpr = sum(fp) / sum(labels!=x)
-
-    #     roc_curve[i+1, :] = [fpr, tpr]
-    
-    return roc_curve
+    # TODO
 
 
 def roc_auc(points):
@@ -74,7 +39,7 @@ def roc_auc(points):
         Area Under the ROC curve.
 
     """
-# TODO 
+    # TODO 
 
 
 
