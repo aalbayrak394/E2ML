@@ -7,7 +7,7 @@ import numpy as np
 from sklearn.utils import check_scalar, check_array
 
 
-def lat_hyp_cube_unit(n_samples, n_dimensions):
+def lat_hyp_cube_unit(n_samples, n_dimensions, nominal_idx=None):
 
     """
     Generate a latin-hypercube design
@@ -25,10 +25,6 @@ def lat_hyp_cube_unit(n_samples, n_dimensions):
     X : np.ndarray of shape (n_samples, n_dimensions)
         An `n_samples-by-n_dimensions` design matrix whose levels are spaced between zero and one.
     """
-    # Q = np.zeros((n_samples, n_dimensions))
-    # for i in range(n_dimensions):
-    #     Q[:, i] = np.random.permutation(list(range(1, n_samples+1)))
-
     Q = [np.random.permutation(list(range(1, n_samples+1))) for i in range(n_dimensions)]
     Q = np.stack(Q, axis=-1)
     R = np.random.uniform(size=(n_samples, n_dimensions))
