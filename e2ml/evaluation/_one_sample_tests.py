@@ -87,7 +87,7 @@ def t_test_one_sample(sample_data, mu_0, test_type="two-sided"):
     sample_size = len(sample_data)
 
     # t_statistic
-    t_statistic = (empirical_mean-mu_0) / np.sqrt((empirical_std**2 / sample_size))
+    t_statistic = (empirical_mean-mu_0) / (empirical_std / np.sqrt(sample_size))
 
     # p_value   
     p_left = stats.t.cdf(t_statistic, df=sample_size-1)

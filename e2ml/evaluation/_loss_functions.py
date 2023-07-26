@@ -1,6 +1,6 @@
 import numpy as np
 
-from sklearn.utils import column_or_1d
+from sklearn.utils import column_or_1d, check_consistent_length
 from scipy.special import xlogy
 
 
@@ -22,6 +22,7 @@ def zero_one_loss(y_true, y_pred):
     """
     y_true = column_or_1d(y_true)
     y_pred = column_or_1d(y_pred)
+    check_consistent_length(y_true, y_pred)
 
     # Compute and return the empirical risk.
     loss = y_true != y_pred

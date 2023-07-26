@@ -37,7 +37,7 @@ def cross_validation(sample_indices, n_folds=5, random_state=None, y=None):
     classes, counts = np.unique(y, return_counts=True)
     classes = classes[np.argsort(-counts)]
 
-    # Datat shuffeling
+    # Data shuffeling
     p = random_state.permutation(len(sample_indices))
     sample_indices = sample_indices[p]
     y = y[p]

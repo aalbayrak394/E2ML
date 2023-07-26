@@ -30,22 +30,21 @@ def confusion_matrix(y_true, y_pred, *, n_classes=None, normalize=None):
         Confusion matrix whose i-th row and j-th column entry indicates the number of amples with true label being
         i-th class and predicted label being j-th class.
     """
-    y_true = column_or_1d(y_true).astype(int)
-    y_pred = column_or_1d(y_pred).astype(int)
+    y_true = column_or_1d(y_true, dtype=int)
+    y_pred = column_or_1d(y_pred, dtype=int)
 
     check_consistent_length(y_true, y_pred)
-    # TODO
-    # check_scalar(y, target_type=int, name='y')
-    # check_scalar(y, target_type=int, name='y')
 
     y_min = np.min((y_true.min(), y_pred.min()))
     y_max = np.max((y_true.max(), y_pred.max()))
 
     if y_min < 0:
-        raise ValueError('negative value')
+        raise ValueError("`y_true` and `y_pred` are expected to have values in the set `{0, ..., n_classes-1}`.")
 
     if n_classes is None:
         n_classes = int(y_max+1)
+
+    check_scalar(n_classes, name="n_classes", min_val=1, target_type=int)
 
     C = np.zeros((n_classes, n_classes))
 
@@ -57,7 +56,7 @@ def confusion_matrix(y_true, y_pred, *, n_classes=None, normalize=None):
         if normalize == 'true':
             C = C/C.sum(axis=1, keepdims=True)
         elif normalize == 'pred':
-            C = C/C.sum(axis=1, keepdims=True)
+            C = C/C.sum(axis=0, keepdims=True)
         elif normalize == 'all':
             C = C/C.sum()
 
@@ -81,16 +80,7 @@ def accuracy(y_true, y_pred):
     acc : float in [0, 1]
         Accuracy.
     """
-    y_true = column_or_1d(y_true).astype(int)
-    y_pred = column_or_1d(y_pred).astype(int)
-    check_consistent_length(y_true, y_pred)
-
-    C = confusion_matrix(y_true, y_pred)
-    TN = C[0,0]
-    TP = C[1,1]
-
-    acc = np.trace(C) / np.sum(C)
-    return acc
+    return 1 - zero_one_loss(y_true=y_true, y_pred=y_pred)
 
 
 def cohen_kappa(y_true, y_pred, n_classes=None):
@@ -151,45 +141,17 @@ def macro_f1_measure(y_true, y_pred, n_classes=None):
     macro_f1 : float in [0, 1]
         The macro f1 measure between 0 and 1.
     """
-    y_true = column_or_1d(y_true).astype(int)
-    y_pred = column_or_1d(y_pred).astype(int)
-    check_consistent_length(y_true, y_pred)
-
-
-    y_min = np.min((y_true.min(), y_pred.min()))
-    y_max = np.max((y_true.max(), y_pred.max()))
-
-    if y_min < 0:
-        raise ValueError('negative value')
-
-    if n_classes is None:
-        n_classes = int(y_max+1)
-
-    # C = confusion_matrix(y_pred=y_pred, y_true=y_true)
-    # f1_scores = np.zeros(n_classes)
-
-    # for c in range(n_classes):
-    #     if not np.any(np.isnan(y_true)) and not np.any(np.isnan(y_pred)):
-    #         f1 = 0.0
-    #     else:
-    #         TP = C[c, c]
-    #         FP = np.sum(C[:, c]) - TP
-    #         FN = np.sum(C[c]) - TP
-
-    #         Prec = TP / (TP + FP)
-    #         Rec = TP / (TP + FN)
-    #         f1 = (2*Prec*Rec) / (Prec + Rec)
-
-    #     f1_scores[c] = f1
-
-    # return np.mean(f1_scores)
-
     C = confusion_matrix(y_true=y_true, y_pred=y_pred, n_classes=n_classes)
     n_classes = len(C)
-    f1 = np.zeros(n_classes)
+    macro_f1 = 0
     for c in range(n_classes):
-        if C[c, :].sum() == 0 and C[:, c].sum() == 0:
-            f1[c] = 0.0
-        else:
-            f1[c] = 2 * C[c, c] / (C[c, :].sum() + C[:, c].sum())
-    return np.mean(f1)
+        with np.errstate(all="ignore"):
+            tp_c = C[c, c]
+            fp_c = C[:, c].sum() - C[c, c]
+            fn_c = C[c, :].sum() - C[c, c]
+            prec_c = tp_c / (tp_c + fp_c)
+            rec_c = tp_c / (tp_c + fn_c)
+            f1_c = (2 * prec_c * rec_c) / (prec_c + rec_c)
+            macro_f1 += np.nan_to_num(f1_c)
+    macro_f1 /= n_classes
+    return macro_f1
